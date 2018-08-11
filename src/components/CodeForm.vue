@@ -131,7 +131,7 @@ export default {
       this.doSubmitObject();
       var self = this;
       axios.post(
-        'http://localhost/codehanback/xmlhttp.php', 
+        'http://romainthoreau.alwaysdata.net/codehanback/xmlhttp.php', 
         {
           operation: self.submitObject.operation,
           title:self.submitObject.title,
