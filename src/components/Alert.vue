@@ -69,11 +69,11 @@ export default {
 	top:25%;
 	left:50%;
 	transform:translate(-50%,-25%);
-	width:300px;
+	width:480px;
 	min-height:100px;
 	text-align:left;
 	box-sizing:border-box;
-	padding:20px 20px 45px;
+	padding:20px 20px 72px;
 }
 .a_ .actions {
 	position:absolute;
