@@ -14,7 +14,7 @@
         <option :value="lang.id_language" v-for="lang in languages" :key="lang.id_language">{{lang.name}}</option>
       </select>
       <div class="addLanguageContainer" v-if="addLanguageVisible">
-        <input type="text" v-model="newLanguage" class="newLanguage" v-on:keyup.enter="addLanguage()" placeholder="Nom" autocomplete="off">
+        <input type="text" v-model="newLanguage" class="newLanguage" v-on:keyup.enter="addLanguage()" placeholder="Nom" autocomplete="off" ref="newLanguageInput">
       </div>
       <button @click="addLanguage()" title="Ajouter un langage" class="button_icon"><i class="icon" :class="addLanguageVisible && newLanguage === '' ? 'icon_delete' : 'icon_plus'"></i></button>
     </div>
@@ -67,13 +67,8 @@ export default {
   data () {
     return {
       addLanguageVisible: false,
-      initLanguages: [
-        {id_language: 1, name: 'CSS'},
-        {id_language: 2, name: 'JS'},
-        {id_language: 3, name: 'PHP'},
-        {id_language: 4, name: 'JSON'}
-      ],
-      languages: '',
+      initLanguages: [],
+      languages: [],
       params: [{name: '', value: ''}],
       title: '',
       content: '',
@@ -131,7 +126,7 @@ export default {
       this.doSubmitObject();
       var self = this;
       axios.post(
-        'http://romainthoreau.alwaysdata.net/codehanback/xmlhttp.php', 
+        this.$serv + 'xmlhttp.php', 
         {
           operation: self.submitObject.operation,
           title:self.submitObject.title,
@@ -151,13 +146,15 @@ export default {
           self.content = ''
           self.languages = self.initLanguages.slice(0)
           self.language = self.languages[0].id_language
+          if (self.newLanguage) {
+            self.getLanguagesList()
+          }
           self.newLanguage = ''
           self.notif('Le code a bien été sauvegardé !', 'success')
         } else if (data.error) {
           self.a_alert(data.message)
         }
-      })
-      .catch(function (error) {
+      }).catch(function (error) {
         console.log(error);
       })
       self.submitObject = false
@@ -166,14 +163,17 @@ export default {
       let self = this;
       if (!this.addLanguageVisible) {
         this.addLanguageVisible = true;
+        this.$nextTick(function () {
+          self.$refs.newLanguageInput.focus();
+        })
         return;
       }
-      let nextId = this.languages.filter(function (lang, index) {
+      let nextId = this.languages.length ? this.languages.filter(function (lang, index) {
         if (index === self.languages.length -1) {
           return lang;
         }
-      })[0].id_language + 1;
-      if (this.newLanguage && this.newLanguage.indexOf(this.languages) < 0) {
+      })[0].id_language + 1 : 1
+      if (this.newLanguage && (!this.languages.length || this.newLanguage.indexOf(this.languages) < 0)) {
         this.languages.push({id_language: nextId, name: this.newLanguage})
         this.language = nextId
       }
@@ -181,25 +181,46 @@ export default {
       this.addLanguageVisible = false
     },
     doSubmitObject() {
+      if (this.newLanguage) {
+        this.addLanguage()
+      }
       let object = {
         operation: 'save_code',
         title: this.title,
         content: this.content,
         id_language: this.language,
         check: this.check
-      };
+      }
       object.params = this.params.filter(param => param.name !== '' || param.value !== '');
       object.params = object.params.length ? JSON.stringify(object.params) : ''
       let existingLanguages = []
       this.initLanguages.map(function (lang) {
         existingLanguages.push(lang.id_language)
-      });
-      object.newLanguages = this.languages.filter(function (lang) {
+      })
+      object.newLanguages = this.languages.length ? this.languages.filter(function (lang) {
         if (!existingLanguages.includes(lang.id_language)){
           return lang;
         }
-      });
+      }) : []
       this.submitObject = object;
+    },
+    getLanguagesList() {
+      var self = this;
+      axios.post(
+        this.$serv + 'xmlhttp.php', 
+        {
+          operation: 'languages_list'
+        }
+      ).then(function (response) {
+        self.initLanguages = response.data
+        //slice(0) to clone the array
+        self.languages = self.initLanguages.slice(0)
+        if (self.languages.length) {
+          self.language = self.languages[0].id_language
+        }
+      }).catch(function (error) {
+        console.log(error);
+      })
     },
     a_alert(a_message, a_mode, a_response) {
       this.a_message = a_message
@@ -225,9 +246,7 @@ export default {
     }
   },
   mounted () {
-    //clone
-    this.languages = this.initLanguages.slice(0)
-    this.language = this.languages[0].id_language
+    this.getLanguagesList();
   }
 }
 </script>

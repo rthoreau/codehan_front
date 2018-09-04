@@ -222,7 +222,7 @@ button{
   width:1rem;
   height:1rem;
   margin:0.15rem;
-  background-color:#151c20;
+  background-color:transparent;
   position:absolute;
 }
 .checkgen:checked + label{
